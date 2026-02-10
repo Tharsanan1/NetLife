@@ -431,7 +431,7 @@ import Layout from '../layouts/Layout.astro';
     color: string;
   }
 
-  const HOURS_IN_YEAR = 8760; // 365 days * 24 hours
+  const HOURS_IN_YEAR = 8760; // 365 days * 24 hours (non-leap year for consistency)
 
   let entries: TimeEntry[] = [];
   let chart: HTMLCanvasElement;
@@ -448,7 +448,7 @@ import Layout from '../layouts/Layout.astro';
       case 'daily':
         return hours * 365;
       case 'weekdays':
-        return hours * 260; // 52 weeks * 5 days
+        return hours * 260; // Approximately 52 weeks * 5 days
       case 'weekends':
         return hours * 104; // 52 weeks * 2 days
       case 'weekly':
@@ -656,14 +656,17 @@ import Layout from '../layouts/Layout.astro';
       const hours = parseFloat((document.getElementById('hours') as HTMLInputElement).value);
 
       if (!description || !hours || hours <= 0) {
-        alert('Please fill in all fields with valid values');
+        alert('Please enter a description and hours greater than 0');
         return;
       }
 
       const yearlyHours = calculateYearlyHours(frequency, hours);
       
-      if (getTotalUsedHours() + yearlyHours > HOURS_IN_YEAR) {
-        alert('This would exceed the total hours in a year (8760 hours). Please adjust your entries.');
+      const currentTotal = getTotalUsedHours();
+      const newTotal = currentTotal + yearlyHours;
+      if (newTotal > HOURS_IN_YEAR) {
+        const overage = newTotal - HOURS_IN_YEAR;
+        alert(`This would exceed the total hours in a year by ${overage.toFixed(0)} hours. Current total: ${currentTotal.toFixed(0)}h, New entry: ${yearlyHours.toFixed(0)}h. Please adjust your entries.`);
         return;
       }
 
