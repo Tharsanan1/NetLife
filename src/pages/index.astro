@@ -1,0 +1,861 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="NetLife - Time Management">
+  <main>
+    <div class="container">
+      <h1>NetLife</h1>
+      <p class="subtitle">Visualize how you spend your time</p>
+      
+      <div class="control-message" id="controlMessage">
+        You have <span class="percentage">100%</span> of your life in your control
+      </div>
+
+      <div class="content-wrapper">
+        <div class="chart-section">
+          <canvas id="pieChart" width="400" height="400"></canvas>
+        </div>
+
+        <div class="entries-section">
+          <div class="entries-header">
+            <h2>Time Entries</h2>
+            <button id="addEntryBtn" class="add-btn" aria-label="Add time entry">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          </div>
+
+          <div id="entriesList" class="entries-list"></div>
+
+          <div id="entryForm" class="entry-form hidden">
+            <h3>Add Time Entry</h3>
+            <div class="form-group">
+              <label for="frequency">Frequency</label>
+              <select id="frequency" required>
+                <option value="daily">Daily</option>
+                <option value="weekdays">Weekdays (Mon-Fri)</option>
+                <option value="weekends">Weekends (Sat-Sun)</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="description">Description</label>
+              <input type="text" id="description" placeholder="e.g., Work, Sleep, Exercise" required />
+            </div>
+
+            <div class="form-group">
+              <label for="hours">Hours per occurrence</label>
+              <input type="number" id="hours" min="0" max="24" step="0.5" placeholder="e.g., 8" required />
+            </div>
+
+            <div class="form-actions">
+              <button id="saveBtn" class="btn-primary">Save</button>
+              <button id="cancelBtn" class="btn-secondary">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  main {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .container {
+    background: white;
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+  }
+
+  .control-message {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.75rem 2rem;
+    border-radius: 16px;
+    text-align: center;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.35);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .control-message::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+  }
+
+  .percentage {
+    font-size: 1.6rem;
+    font-weight: 700;
+  }
+
+  .content-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  .chart-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(102, 126, 234, 0.1);
+  }
+
+  #pieChart {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .entries-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .entries-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .entries-header h2 {
+    font-size: 1.8rem;
+    color: #333;
+  }
+
+  .add-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 54px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+    position: relative;
+  }
+  
+  .add-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    padding: 2px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .add-btn:hover {
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
+  }
+
+  .add-btn:active {
+    transform: scale(0.95) rotate(90deg);
+  }
+
+  .entries-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 0.5rem;
+  }
+  
+  .entries-list::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .entries-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+  
+  .entries-list::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+  }
+  
+  .entries-list::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  }
+
+  .entry-item {
+    background: white;
+    padding: 1.25rem;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .entry-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+    border-color: rgba(102, 126, 234, 0.2);
+  }
+  
+  .entry-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background: linear-gradient(180deg, var(--entry-color, #667eea) 0%, var(--entry-color, #764ba2) 100%);
+    transition: width 0.3s ease;
+  }
+  
+  .entry-item:hover::before {
+    width: 8px;
+  }
+
+  .entry-info {
+    flex: 1;
+    padding-left: 1rem;
+  }
+
+  .entry-description {
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: #2d3748;
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.02em;
+  }
+
+  .entry-details {
+    font-size: 0.875rem;
+    color: #718096;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .entry-details span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  
+  .entry-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #667eea;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+  }
+
+  .delete-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.625rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 0.875rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(238, 90, 111, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .delete-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(238, 90, 111, 0.4);
+  }
+  
+  .delete-btn:active {
+    transform: translateY(0);
+  }
+
+  .entry-form {
+    background: white;
+    padding: 1.75rem;
+    border-radius: 16px;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
+    animation: slideIn 0.3s ease-out;
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .entry-form h3 {
+    margin-bottom: 1rem;
+    color: #333;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+    color: #2d3748;
+    font-size: 0.9rem;
+    letter-spacing: -0.01em;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    background: #f8f9fa;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  }
+  
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .btn-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+  }
+
+  .btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+  }
+  
+  .btn-secondary:active {
+    transform: translateY(0);
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .content-wrapper {
+      grid-template-columns: 1fr;
+    }
+
+    .chart-section {
+      order: 1;
+    }
+
+    .entries-section {
+      order: 2;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .container {
+      padding: 1.5rem;
+      border-radius: 15px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+    }
+
+    .control-message {
+      padding: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .percentage {
+      font-size: 1.4rem;
+    }
+
+    .content-wrapper {
+      gap: 2rem;
+    }
+
+    .chart-section {
+      padding: 1rem;
+    }
+
+    .entries-header h2 {
+      font-size: 1.5rem;
+    }
+
+    .add-btn {
+      width: 45px;
+      height: 45px;
+    }
+
+    .entry-form {
+      padding: 1rem;
+    }
+
+    .form-actions {
+      flex-direction: column;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .container {
+      padding: 1rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+    }
+
+    .control-message {
+      padding: 0.8rem;
+      font-size: 1rem;
+    }
+
+    .percentage {
+      font-size: 1.2rem;
+    }
+
+    .entries-header h2 {
+      font-size: 1.3rem;
+    }
+
+    .add-btn {
+      width: 40px;
+      height: 40px;
+    }
+
+    .add-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .entry-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.8rem;
+    }
+
+    .delete-btn {
+      align-self: flex-end;
+    }
+  }
+</style>
+
+<script>
+  interface TimeEntry {
+    id: string;
+    frequency: string;
+    description: string;
+    hours: number;
+    yearlyHours: number;
+    color: string;
+  }
+
+  const HOURS_IN_YEAR = 8760; // 365 days * 24 hours (non-leap year for consistency)
+
+  let entries: TimeEntry[] = [];
+  let chart: HTMLCanvasElement;
+  let ctx: CanvasRenderingContext2D;
+
+  // Color palette for pie chart
+  const colors = [
+    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+    '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF9F40'
+  ];
+
+  function calculateYearlyHours(frequency: string, hours: number): number {
+    switch (frequency) {
+      case 'daily':
+        return hours * 365;
+      case 'weekdays':
+        return hours * 260; // Approximately 52 weeks * 5 days
+      case 'weekends':
+        return hours * 104; // 52 weeks * 2 days
+      case 'weekly':
+        return hours * 52;
+      case 'monthly':
+        return hours * 12;
+      case 'yearly':
+        return hours;
+      default:
+        return 0;
+    }
+  }
+
+  function getTotalUsedHours(): number {
+    return entries.reduce((sum, entry) => sum + entry.yearlyHours, 0);
+  }
+
+  function getFreeTimePercentage(): number {
+    const usedHours = getTotalUsedHours();
+    const freeHours = HOURS_IN_YEAR - usedHours;
+    return Math.max(0, (freeHours / HOURS_IN_YEAR) * 100);
+  }
+
+  function updateControlMessage() {
+    const freePercentage = getFreeTimePercentage();
+    const messageEl = document.getElementById('controlMessage');
+    const percentageEl = messageEl?.querySelector('.percentage');
+    
+    if (percentageEl) {
+      percentageEl.textContent = `${freePercentage.toFixed(1)}%`;
+    }
+  }
+
+  function drawPieChart(animate = true) {
+    if (!ctx) return;
+
+    const width = chart.width;
+    const height = chart.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = Math.min(width, height) / 2 - 20;
+
+    ctx.clearRect(0, 0, width, height);
+
+    const totalUsed = getTotalUsedHours();
+    const freeHours = Math.max(0, HOURS_IN_YEAR - totalUsed);
+    
+    let currentAngle = -Math.PI / 2; // Start at top
+
+    // Draw used time slices
+    entries.forEach((entry, index) => {
+      const sliceAngle = (entry.yearlyHours / HOURS_IN_YEAR) * 2 * Math.PI;
+      
+      ctx.beginPath();
+      ctx.fillStyle = entry.color;
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw slice border
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      currentAngle += sliceAngle;
+    });
+
+    // Draw free time slice
+    if (freeHours > 0) {
+      const freeAngle = (freeHours / HOURS_IN_YEAR) * 2 * Math.PI;
+      
+      ctx.beginPath();
+      ctx.fillStyle = '#e0e0e0';
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + freeAngle);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // Draw center circle for donut effect
+    ctx.beginPath();
+    ctx.fillStyle = 'white';
+    ctx.arc(centerX, centerY, radius * 0.6, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Draw text in center
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    const freePercentage = getFreeTimePercentage();
+    ctx.fillText(`${freePercentage.toFixed(1)}%`, centerX, centerY - 10);
+    
+    ctx.font = '14px sans-serif';
+    ctx.fillText('Free Time', centerX, centerY + 15);
+  }
+
+  function renderEntries() {
+    const listEl = document.getElementById('entriesList');
+    if (!listEl) return;
+
+    listEl.innerHTML = '';
+
+    if (entries.length === 0) {
+      listEl.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No entries yet. Click + to add one!</p>';
+      return;
+    }
+
+    entries.forEach((entry) => {
+      const percentage = (entry.yearlyHours / HOURS_IN_YEAR) * 100;
+      const itemEl = document.createElement('div');
+      itemEl.className = 'entry-item';
+      itemEl.style.setProperty('--entry-color', entry.color);
+      itemEl.innerHTML = `
+        <div class="entry-info">
+          <div class="entry-description">${entry.description}</div>
+          <div class="entry-details">
+            <span>${entry.hours}h ${entry.frequency}</span>
+            <span>•</span>
+            <span>${entry.yearlyHours.toFixed(0)}h/year</span>
+            <span>•</span>
+            <span class="entry-badge">${percentage.toFixed(1)}%</span>
+          </div>
+        </div>
+        <button class="delete-btn" data-id="${entry.id}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          Delete
+        </button>
+      `;
+
+      const deleteBtn = itemEl.querySelector('.delete-btn');
+      deleteBtn?.addEventListener('click', () => {
+        entries = entries.filter(e => e.id !== entry.id);
+        saveToLocalStorage();
+        renderEntries();
+        drawPieChart();
+        updateControlMessage();
+      });
+
+      listEl.appendChild(itemEl);
+    });
+  }
+
+  function saveToLocalStorage() {
+    localStorage.setItem('netlife-entries', JSON.stringify(entries));
+  }
+
+  function loadFromLocalStorage() {
+    const stored = localStorage.getItem('netlife-entries');
+    if (stored) {
+      try {
+        entries = JSON.parse(stored);
+      } catch (e) {
+        entries = [];
+      }
+    }
+  }
+
+  function initializeApp() {
+    chart = document.getElementById('pieChart') as HTMLCanvasElement;
+    ctx = chart.getContext('2d')!;
+
+    // Make canvas responsive
+    function resizeCanvas() {
+      const container = chart.parentElement;
+      if (container) {
+        const size = Math.min(container.clientWidth - 40, 400);
+        chart.width = size;
+        chart.height = size;
+        drawPieChart(false);
+      }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    loadFromLocalStorage();
+    renderEntries();
+    drawPieChart(false);
+    updateControlMessage();
+
+    // Add entry button
+    const addBtn = document.getElementById('addEntryBtn');
+    const entryForm = document.getElementById('entryForm');
+    const saveBtn = document.getElementById('saveBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    addBtn?.addEventListener('click', () => {
+      entryForm?.classList.remove('hidden');
+      addBtn.style.display = 'none';
+    });
+
+    cancelBtn?.addEventListener('click', () => {
+      entryForm?.classList.add('hidden');
+      addBtn!.style.display = 'flex';
+      
+      // Reset form
+      (document.getElementById('frequency') as HTMLSelectElement).value = 'daily';
+      (document.getElementById('description') as HTMLInputElement).value = '';
+      (document.getElementById('hours') as HTMLInputElement).value = '';
+    });
+
+    saveBtn?.addEventListener('click', () => {
+      const frequency = (document.getElementById('frequency') as HTMLSelectElement).value;
+      const description = (document.getElementById('description') as HTMLInputElement).value.trim();
+      const hours = parseFloat((document.getElementById('hours') as HTMLInputElement).value);
+
+      if (!description || !hours || hours <= 0) {
+        alert('Please enter a description and hours greater than 0');
+        return;
+      }
+
+      const yearlyHours = calculateYearlyHours(frequency, hours);
+      
+      const currentTotal = getTotalUsedHours();
+      const newTotal = currentTotal + yearlyHours;
+      if (newTotal > HOURS_IN_YEAR) {
+        const overage = newTotal - HOURS_IN_YEAR;
+        alert(`This would exceed the total hours in a year by ${overage.toFixed(0)} hours. Current total: ${currentTotal.toFixed(0)}h, New entry: ${yearlyHours.toFixed(0)}h. Please adjust your entries.`);
+        return;
+      }
+
+      const newEntry: TimeEntry = {
+        id: Date.now().toString(),
+        frequency,
+        description,
+        hours,
+        yearlyHours,
+        color: colors[entries.length % colors.length]
+      };
+
+      entries.push(newEntry);
+      saveToLocalStorage();
+      
+      // Reset form and hide
+      entryForm?.classList.add('hidden');
+      addBtn!.style.display = 'flex';
+      (document.getElementById('frequency') as HTMLSelectElement).value = 'daily';
+      (document.getElementById('description') as HTMLInputElement).value = '';
+      (document.getElementById('hours') as HTMLInputElement).value = '';
+
+      renderEntries();
+      animateChartUpdate();
+      updateControlMessage();
+    });
+  }
+
+  function animateChartUpdate() {
+    let frame = 0;
+    const totalFrames = 30;
+
+    function animate() {
+      frame++;
+      if (frame <= totalFrames) {
+        drawPieChart();
+        requestAnimationFrame(animate);
+      }
+    }
+
+    animate();
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+  } else {
+    initializeApp();
+  }
+</script>
